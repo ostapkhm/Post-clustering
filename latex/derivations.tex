@@ -1,0 +1,188 @@
+\documentclass[14pt]{article}
+
+\usepackage[table]{xcolor}
+\usepackage[a4paper, left=2cm, right=2cm, bottom=3cm]{geometry}
+\usepackage[T1, T2A]{fontenc}
+\usepackage[english, main=ukrainian]{babel}
+\usepackage{tempora}
+\usepackage{amssymb,amsfonts,amsmath,amsthm} 
+\usepackage{dsfont}
+\usepackage{empheq}
+
+\begin{document}
+\raggedright
+\fontsize{12pt}{16pt}\selectfont
+
+$(X, Y)-$ одне спостереження   
+$K$ - фіксована кількість елементів суміші для $X$ \\
+$P(\xi=i)=p_i, \: i= 1, \dots, K$ \\
+$\xi$ вказує до якої суміші належить $X$ \\
+$\eta-$ випадкова величина, що вказує кількість латентних змінних в цій суміші. $М$ - максимальна можлива кількість сумішей. \\
+$\eta |_{\xi=i} \sim 1 + \text{Bin}(M-1; q_i)$ \\
+
+$B_j^M$ - множина бінарних послідовностей з $j$ одиниць \\
+$B^M = \cup_{j=1}^M B_j^M$ - множина всіх бінарних послідовностей \\
+$S \in B^M: s=(s_1, \dots, s_M)$ \\
+$S$ - випадкова величина на $B^M$
+
+$$P(S=s| \xi=i, \eta=j) = \mathds{1}(s \in B^M_j) \cdot \frac{r_{i1}^{s_1} \cdots r_{iM}^{s_M}}{\sum_{s^{'} \in B^M_j} r_{i1}^{s^{'}_1} \cdots r_{iM}^{s^{'}_M}}$$
+
+
+$\zeta$ - випадкова величина яка вказує до якої саме конкретної компоненти суміші з $j$ елементної множини одиниць $s$ належить $Y$.
+
+$$P(\zeta=l | \xi=i, \eta=j, S=s) = \frac{s_l r_{il}}{\sum_{k=1}^{M} s_k \cdot r_{ik}}$$
+
+Тоді:
+
+$$(X, Y) = \sum_{i=1}^{K} \sum_{j=1}^{M} \sum_{s \in B^M_j} \sum_{\substack{l=1:\\ s_l=1}}^{M} \mathds{1}(\xi=i, \eta=j, S=s, \zeta=l) (X_i, Y_{il})$$
+
+$$X_i \sim N(\mu_i, \sigma_i^2)$$
+$$Y_{il} \sim N(\mu_{il}, \sigma_{il}^2)$$
+
+$X_i$ та $Y_{il}$ при заданих $\xi, \eta, S, \zeta$ - незалежні
+
+$$f_{(X, Y)}(x, y) = \sum_{i=1}^{K} \sum_{j=1}^{M} \sum_{s \in B^M_j} \sum_{\substack{l=1:\\ s_l=1}}^{M} P(\xi=i, \eta=j, S=s, \zeta=l) \cdot f_i(x; \theta_i) \cdot g_{il}(y; \theta_{il})$$
+
+Якщо $(X_1, Y_1), \dots, (X_n, Y_n)$ - н.о.р. в.в. $\sim (X, Y)$ \\
+
+$$L(x_1, \dots x_n; y_1, \dots y_n; P, Q, R, \Theta) = \prod_{t=1}^{n} \sum_{i=1}^{K} \sum_{j=1}^{M} \sum_{s \in B^M_j} \sum_{\substack{l=1:\\ s_l=1}}^{M} P(\xi^t=i, \eta^t=j, S^t=s, \zeta^t=l) \cdot f_i(x^t; \theta_i) \cdot g_{il}(y^t; \theta_{il})$$
+
+\pagebreak
+Введемо наступні позначення:\\
+$$\pi_{ijsl} = P(\xi^t=i, \eta^t=j, S^t=s, \zeta^t=l)$$
+
+$$\pi_{ijsl} = p_i \cdot q_{ij} \cdot \mathds{1}(s \in B^M_j) \cdot \frac{r_{i1}^{s_1} \cdots r_{iM}^{s_M}}{\sum_{s^{'} \in B^M_j} r_{i1}^{s^{'}_1} \cdots r_{iM}^{s^{'}_M}} \cdot \frac{s_l r_{il}}{\sum_{k=1}^{M} s_k \cdot r_{ik}} $$
+
+$$z_{ijsl}^t = \mathds{1}(\xi^t=i, \eta^t=j, S^t=s, \zeta^t=l)$$
+
+Тоді:
+
+$$\log{L(x_1, \dots x_n; y_1, \dots y_n; P, Q, R, \Theta)} = \sum_{t=1}^{n} \sum_{i=1}^{K} \sum_{j=1}^{M} \sum_{s \in B^M_j} \sum_{\substack{l=1:\\ s_l=1}}^{M} z_{ijsl}^t \log{ \left(\pi_{ijsl} \cdot f_i(x^t; \theta_i) \cdot g_{il}(y^t; \theta_{il}) \right)}$$
+
+Оцінюємо $z_{ijsl}^t$ як умовне математичне сподівання, тобто вводять нову змінну 
+$$\gamma_{ijsl}^t = M[z_{ijsl}^t | x_1, \dots x_n; y_1, \dots y_n; P, Q, R, \Theta]$$
+
+$$\gamma_{ijsl}^t = \frac{\pi_{ijsl} \cdot f_i(x^t; \theta_i) \cdot g_{il}(y^t; \theta_{il})}{\sum_{i'=1}^{K} \sum_{j'=1}^{M} \sum_{s' \in B^M_j} \sum_{\substack{l'=1:\\ {s'}_{l'}=1}}^{M} \pi_{i'j's'l'} \cdot f_{i'}(x^t; \theta_{i'}) \cdot g_{i'l}(y^t; \theta_{i'l'})}$$
+
+Тоді квазі-логарифмічна функція набуває вигляду: \\
+\begin{equation}
+\begin{split}
+QL(x_1, \dots x_n; y_1, \dots y_n; P, Q, R, \Theta) = \\
+= \sum_{t=1}^{n} \sum_{i=1}^{K} \sum_{j=1}^{M} \sum_{s \in B^M_j} \sum_{\substack{l=1:\\ s_l=1}}^{M} \gamma_{ijsl}^t \cdot [\log{\pi_{ijsl}} + \log{f_i(x^t; \theta_i)} + \log{g_{il}(y^t; \theta_{il})}] = \\
+= \sum_{t=1}^{n} \sum_{i=1}^{K} \sum_{j=1}^{M} \sum_{s \in B^M_j} \sum_{\substack{l=1:\\ s_l=1}}^{M} \gamma_{ijsl}^t \cdot [\log{p_i} + \log{q_{ij}} + \sum_{q=1}^{M} s_q \log{r_{iq}} + \log{f_i(x^t; \theta_i)} + \log{g_{il}(y^t; \theta_{il})}]
+\end{split}
+\end{equation}
+
+
+\begin{align*}
+& QL(x_1, \dots x_n; y_1, \dots y_n; P, Q, R, \Theta) = \\
+& = \sum_{t=1}^{n} \sum_{i=1}^{K} \sum_{j=1}^{M} \sum_{s \in B^M_j} \sum_{\substack{l=1:\\ s_l=1}}^{M} \gamma_{ijsl}^t \cdot [\log{\pi_{ijsl}} + \log{f_i(x^t; \theta_i)} + \log{g_{il}(y^t; \theta_{il})}] = \\
+& = \sum_{t=1}^{n} \sum_{i=1}^{K} \sum_{j=1}^{M} \sum_{s \in B^M_j} \sum_{\substack{l=1:\\ s_l=1}}^{M} \gamma_{ijsl}^t \cdot \Big[\log{p_i} + \log{q_{ij}} + \sum_{k=1}^{M} s_k \log{r_{ik}} -
+\log{\left( \sum_{s^{'} \in B^M_j} r_{i1}^{s^{'}_1} \cdots r_{iM}^{s^{'}_M} \right)} +  \log{r_{il}}\\ 
+& - \log{ \left(\sum_{k=1}^{M} s_k \cdot r_{ik} \right)} + \log{f_i(x^t; \theta_i)} + \log{g_{il}(y^t; \theta_{il})} \Big]
+\end{align*}
+
+\pagebreak
+
+Обмеження: 
+$$\sum_{j=1}^{M} r_{ij} = 1, \:\: i \in 1 \dots K$$
+$$\sum_{j=1}^{M} q_{ij} = 1, \:\: i \in 1 \dots K$$
+$$\sum_{i=1}^{K} p_{i} = 1$$
+
+Сформуємо Лагранжіан:
+
+\begin{align*}
+& L(x_1, \dots x_n; y_1, \dots y_n; P, Q, R, \Theta) = \\
+& = \sum_{t=1}^{n} \sum_{i=1}^{K} \sum_{j=1}^{M} \sum_{s \in B^M_j} \sum_{\substack{l=1:\\ s_l=1}}^{M} \gamma_{ijsl}^t \cdot \Big[\log{p_i} + \log{q_{ij}} + \sum_{k=1}^{M} s_k \log{r_{ik}} -
+\log{\left( \sum_{s^{'} \in B^M_j} r_{i1}^{s^{'}_1} \cdots r_{iM}^{s^{'}_M} \right)} +  \log{r_{il}}\\ 
+& - \log{ \left(\sum_{k=1}^{M} s_k \cdot r_{ik} \right)} + \log{f_i(x^t; \theta_i)} + \log{g_{il}(y^t; \theta_{il})} \Big] - \alpha \left( \sum_{i=1}^{K} p_i - 1 \right) - \sum_{i=1}^{K} \beta_i \left( \sum_{j=1}^{M} q_{ij} - 1 \right) - \\
+& -  \sum_{i=1}^{K} \kappa_i \left( \sum_{j=1}^{M} r_{ij} - 1 \right)
+\end{align*}
+
+Залишилось знайти похідні:  
+
+
+$$
+\frac{\partial L}{\partial p_x} = \sum_{t=1}^{n} \sum_{j=1}^{M} \sum_{s \in B^M_j} \sum_{\substack{l=1:\\ s_l=1}}^{M} \gamma_{xjsl}^t \cdot \frac{1}{p_x} - \alpha = 0
+$$
+
+$$
+p_x = \frac{1}{\alpha} \cdot \sum_{t=1}^{n} \sum_{j=1}^{M} \sum_{s \in B^M_j} \sum_{\substack{l=1:\\ s_l=1}}^{M} \gamma_{xjsl}^t 
+$$
+
+З іншого боку, $\sum_{x=1}^{K} p_x = 1$. Тому: 
+$$\alpha = \sum_{i=1}^{K} \sum_{t=1}^{n} \sum_{j=1}^{M} \sum_{s \in B^M_j} \sum_{\substack{l=1:\\ s_l=1}}^{M} \gamma_{ijsl}^t = n$$
+
+\begin{empheq}[box=\fbox]{align*}
+p_x = \frac{1}{n} \cdot \sum_{t=1}^{n} \sum_{j=1}^{M} \sum_{s \in B^M_j} \sum_{\substack{l=1:\\ s_l=1}}^{M} \gamma_{xjsl}^t 
+\end{empheq}
+
+\pagebreak
+
+$$
+\frac{\partial L}{\partial q_{xy}} = \sum_{t=1}^{n} \sum_{s \in B^M_y} \sum_{\substack{l=1:\\ s_l=1}}^{M} \gamma_{xysl}^t \cdot \frac{1}{q_{xy}} - \beta_x = 0
+$$
+
+$$
+q_{xy} = \frac{1}{\beta_x} \cdot \sum_{t=1}^{n} \sum_{s \in B^M_y} \sum_{\substack{l=1:\\ s_l=1}}^{M} \gamma_{xysl}^t 
+$$
+
+З іншого боку, $\sum_{y=1}^{M} q_{xy} = 1$. Тому: 
+$$
+\beta_x = \sum_{y=1}^{M} \sum_{t=1}^{n} \sum_{s \in B^M_y} \sum_{\substack{l=1:\\ s_l=1}}^{M} \gamma_{xysl}^t 
+$$
+
+\begin{empheq}[box=\fbox]{align*}
+q_{xy} = \frac{\sum_{t=1}^{n} \sum_{s \in B^M_y} \sum_{\substack{l=1:\\ s_l=1}}^{M} \gamma_{xysl}^t}
+{\sum_{t'=1}^{n} \sum_{y'=1}^{M} \sum_{s' \in B^M_{y'}} \sum_{\substack{l'=1:\\ {s'}_{l'}=1}}^{M} \gamma_{xy's'l'}^{t'}}
+\end{empheq}
+
+\vspace{1cm}
+
+
+\begin{align*}
+\frac{\partial L}{\partial r_{xy}} &= \sum_{t=1}^{n} \sum_{j=1}^{M} \sum_{s \in B^M_j} \frac{\partial}{\partial r_{xy}} \sum_{i=1}^{K}  \sum_{\substack{l=1:\\ s_l=1}}^{M} \gamma_{ijsl}^t \Big[\sum_{k=1}^{M} s_k \log{r_{ik}} + \log{r_{il}} \Big] - \\
+& - \sum_{t=1}^{n} \sum_{j=1}^{M} \sum_{s \in B^M_j} \frac{\partial}{\partial r_{xy}} \sum_{i=1}^{K}  \sum_{\substack{l=1:\\ s_l=1}}^{M} \gamma_{ijsl}^t \log{\left( \sum_{s^{'} \in B^M_j} r_{i1}^{s^{'}_1} \cdots r_{iM}^{s^{'}_M} \right)} - \\ 
+& - \sum_{t=1}^{n} \sum_{j=1}^{M} \sum_{s \in B^M_j} \frac{\partial}{\partial r_{xy}} \sum_{i=1}^{K}  \sum_{\substack{l=1:\\ s_l=1}}^{M} \gamma_{ijsl}^t \log{ \left(\sum_{k=1}^{M} s_k \cdot r_{ik} \right)} - \kappa_x = 0
+\end{align*}
+
+Поки відкинемо останні два доданки з похідними і виразимо параметр $r_{xy}$:
+$$ \frac{\partial L}{\partial r_{xy}} = \sum_{t=1}^{n} \sum_{j=1}^{M} \sum_{s \in B^M_j} \frac{\partial}{\partial r_{xy}} \sum_{i=1}^{K}  \sum_{\substack{l=1:\\ s_l=1}}^{M} \gamma_{ijsl}^t \Big[\sum_{k=1}^{M} s_k \log{r_{ik}} + \log{r_{il}} \Big] $$ 
+
+$$
+\sum_{t=1}^{n} \sum_{j=1}^{M} \sum_{s \in B^M_j} 
+\frac{\gamma_{xjsy}^t }{r_{xy}} + 
+\frac{s_y}{r_{xy}}\sum_{\substack{l=1:\\ s_l=1}}^{M} \gamma_{xjsl}^t - \kappa_x = 0
+$$
+
+Звідси:
+
+$$
+r_{xy} = \frac{1}{\kappa_x} \sum_{t=1}^{n} \sum_{j=1}^{M} \sum_{s \in B^M_j} 
+\Big[ \gamma_{xjsy}^t + 
+s_y \sum_{\substack{l=1:\\ s_l=1}}^{M} \gamma_{xjsl}^t \Big]
+$$
+
+\pagebreak
+Відомо, що:
+$$
+\sum_{y=1}^{M} r_{xy} = 1
+$$
+
+Тому: 
+$$\kappa_x = \sum_{y=1}^{M} \sum_{t=1}^{n} \sum_{j=1}^{M} \sum_{s \in B^M_j} 
+\Big[ \gamma_{xjsy}^t + 
+s_y \sum_{\substack{l=1:\\ s_l=1}}^{M} \gamma_{xjsl}^t \Big]
+$$
+
+\begin{empheq}[box=\fbox]{align*}
+r_{xy} = \frac{\sum_{t=1}^{n} \sum_{j=1}^{M} \sum_{s \in B^M_j} 
+\Big[ \gamma_{xjsy}^t + 
+s_y \sum_{\substack{l=1:\\ s_l=1}}^{M} \gamma_{xjsl}^t \Big]}
+{\sum_{y=1}^{M} \sum_{t=1}^{n} \sum_{j=1}^{M} \sum_{s \in B^M_j} 
+\Big[ \gamma_{xjsy}^t + 
+s_y \sum_{\substack{l=1:\\ s_l=1}}^{M} \gamma_{xjsl}^t \Big]}
+\end{empheq}
+
+
+\end{document}
