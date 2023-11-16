@@ -147,7 +147,7 @@ q_{xy} = \frac{\sum_{t=1}^{n} \sum_{s \in B^M_y} \sum_{\substack{l=1:\\ s_l=1}}^
 \end{align*}
 
 Поки відкинемо останні два доданки з похідними і виразимо параметр $r_{xy}$:
-$$ \frac{\partial L}{\partial r_{xy}} = \sum_{t=1}^{n} \sum_{j=1}^{M} \sum_{s \in B^M_j} \frac{\partial}{\partial r_{xy}} \sum_{i=1}^{K}  \sum_{\substack{l=1:\\ s_l=1}}^{M} \gamma_{ijsl}^t \Big[\sum_{k=1}^{M} s_k \log{r_{ik}} + \log{r_{il}} \Big] $$ 
+$$ \frac{\partial L}{\partial r_{xy}} = \sum_{t=1}^{n} \sum_{j=1}^{M} \sum_{s \in B^M_j} \frac{\partial}{\partial r_{xy}} \sum_{i=1}^{K}  \sum_{\substack{l=1:\\ s_l=1}}^{M} \gamma_{ijsl}^t \Big[\sum_{k=1}^{M} s_k \log{r_{ik}} + \log{r_{il}} \Big] - \kappa_x = 0 $$ 
 
 $$
 \sum_{t=1}^{n} \sum_{j=1}^{M} \sum_{s \in B^M_j} 
@@ -183,6 +183,89 @@ s_y \sum_{\substack{l=1:\\ s_l=1}}^{M} \gamma_{xjsl}^t \Big]}
 \Big[ \gamma_{xjsy}^t + 
 s_y \sum_{\substack{l=1:\\ s_l=1}}^{M} \gamma_{xjsl}^t \Big]}
 \end{empheq}
+
+
+Розглянемо як це буде виглядати з двома доданками, тобто:
+\begin{align*}
+\frac{\partial L}{\partial r_{xy}} &= \sum_{t=1}^{n} \sum_{j=1}^{M} \sum_{s \in B^M_j} \frac{\partial}{\partial r_{xy}} \sum_{i=1}^{K}  \sum_{\substack{l=1:\\ s_l=1}}^{M} \gamma_{ijsl}^t \Big[\sum_{k=1}^{M} s_k \log{r_{ik}} + \log{r_{il}} \Big] - \\
+& - \sum_{t=1}^{n} \sum_{j=1}^{M} \sum_{s \in B^M_j} \frac{\partial}{\partial r_{xy}} \sum_{i=1}^{K}  \sum_{\substack{l=1:\\ s_l=1}}^{M} \gamma_{ijsl}^t \log{\left( \sum_{s^{'} \in B^M_j} r_{i1}^{s^{'}_1} \cdots r_{iM}^{s^{'}_M} \right)} - \kappa_x = 0
+\end{align*}
+
+\begin{align*}
+\frac{\partial L}{\partial r_{xy}} &= \sum_{t=1}^{n} \sum_{j=1}^{M} \sum_{s \in B^M_j} \Big[\frac{\gamma_{xjsy}^t }{r_{xy}} + 
+\frac{s_y}{r_{xy}}\sum_{\substack{l=1:\\ s_l=1}}^{M} \gamma_{xjsl}^t \Big] - \\
+& - \sum_{t=1}^{n} \sum_{j=1}^{M} \sum_{s \in B^M_j} \frac{\partial}{\partial r_{xy}} \sum_{i=1}^{K} \log{\left( \sum_{s^{'} \in B^M_j} r_{i1}^{s^{'}_1} \cdots r_{iM}^{s^{'}_M} \right)} \sum_{\substack{l=1:\\ s_l=1}}^{M} \gamma_{ijsl}^t - \kappa_x = 0
+\end{align*}
+
+\begin{align*}
+\frac{\partial L}{\partial r_{xy}} &= \sum_{t=1}^{n} \sum_{j=1}^{M} \sum_{s \in B^M_j} \Big[\frac{\gamma_{xjsy}^t }{r_{xy}} + 
+\frac{s_y}{r_{xy}}\sum_{\substack{l=1:\\ s_l=1}}^{M} \gamma_{xjsl}^t \Big] - \\
+& - \sum_{t=1}^{n} \sum_{j=1}^{M} \sum_{s \in B^M_j} \frac{r_{xy} \sum_{s' \in B^j_M} s^{'}_y \prod_{k=1,  k \neq y}^{M} r_{xk}^{s^{'}_k}}{\sum_{s^{'} \in B^M_j} r_{i1}^{s^{'}_1} \cdots r_{iM}^{s^{'}_M}} \sum_{\substack{l=1:\\ s_l=1}}^{M} \gamma_{xjsl}^t - \kappa_x = 0
+\end{align*}
+
+Оцінемо знаменник 2 доданку як $C_M^j$ \\ 
+Тоді згрупуємо усе разом і отримуємо наступне:
+
+
+\pagebreak
+
+\begin{align*}
+\frac{\partial L}{\partial r_{xy}} &= \sum_{t=1}^{n} \sum_{j=1}^{M} \sum_{s \in B^M_j} \Big[\frac{\gamma_{xjsy}^t }{r_{xy}} + 
+\frac{s_y}{r_{xy}}\sum_{\substack{l=1:\\ s_l=1}}^{M} \gamma_{xjsl}^t - \frac{r_{xy} \sum_{s' \in B^j_M} s^{'}_y \prod_{k=1,  k \neq y}^{M} r_{xk}^{s^{'}_k}}{C_M^j} \sum_{\substack{l=1:\\ s_l=1}}^{M} \gamma_{xjsl}^t \Big] - \kappa_x = 0
+\end{align*}
+
+Для спрощення запису введемо деякі позначення, а саме:
+$$
+\frac{\sum_{s' \in B^j_M} s^{'}_y \prod_{k=1,  k \neq y}^{M} r_{xk}^{s^{'}_k}}{C_M^j}  \sum_{\substack{l=1:\\ s_l=1}}^{M} \gamma_{xjsl}^t = G(x, y, j)
+$$
+
+$$
+s_y \sum_{\substack{l=1:\\ s_l=1}}^{M} \gamma_{xjsl}^t = J(x, y, j)
+$$
+
+\begin{align*}
+\frac{\partial L}{\partial r_{xy}} &= \sum_{t=1}^{n} \sum_{j=1}^{M} \sum_{s \in B^M_j} \Big[\frac{\gamma_{xjsy}^t }{r_{xy}} + 
+\frac{J(x, y, j)}{r_{xy}}- r_{xy} G(x, y, j)  \Big] - \kappa_x = 0
+\end{align*}
+
+
+\begin{align*}
+\sum_{t=1}^{n} \sum_{j=1}^{M} \sum_{s \in B^M_j} \Big[\gamma_{xjsy}^t + 
+J(x, y, j)- r_{xy}^{2} G(x, y, j) \Big] = r_{xy} \kappa_x
+\end{align*}
+
+Перегрупувавши, отримуємо:
+\begin{align*}
+r_{xy}^{2} \sum_{t=1}^{n} \sum_{j=1}^{M} \sum_{s \in B^M_j} G(x, y, j) + r_{xy} \kappa_x - \sum_{t=1}^{n} \sum_{j=1}^{M} \sum_{s \in B^M_j} \Big[ \gamma_{xjsy}^t + J(x, y, j) \Big] = 0
+\end{align*}
+
+Або позначивши відповідні множники, отримуємо:
+\begin{align*}
+r_{xy}^{2} a(x, y) + r_{xy} \kappa_x - c(x, y) = 0
+\end{align*}
+
+Розв'язавши, отримуємо:
+\begin{align*}
+r_{xy} = \frac{- \kappa_x \pm \sqrt{\kappa_x^2 + 4ac}}{2a}
+\end{align*}
+
+Залишається лише знайти $\kappa_x$. Це мені здається не так тривіально, тому треба робити деякі припущення:\\
+
+Відомо, що:
+$$\sum_{y=1}^{M} r_{xy} = 1$$
+
+\pagebreak
+
+$$\sum_{y=1}^{M} \frac{- \kappa_x \pm \sqrt{\kappa_x + 4a(x, y)c(x, y)}}{2a(x, y)} = 1$$
+
+Розкладемо корінь в ряд Тейлора до 2-го порядку, тоді: \\
+$$\sum_{y=1}^{M} \frac{- \kappa_x \pm \kappa_x (1 + \frac{4a(x,y) c(x, y)}{2 \kappa_x^2})}{2a(x, y)} = 1$$
+
+Оберемо знак +, та спростивши усе, отримуємо:
+$$\sum_{y=1}^{M} \frac{c(x, y)}{\kappa_x} = 1$$
+
+Тобто 
+$$\kappa_x = \sum_{y=1}^{M} c(x, y) = \sum_{y=1}^{M} \sum_{t=1}^{n} \sum_{j=1}^{M} \sum_{s \in B^M_j} \Big[ \gamma_{xjsy}^t + J(x, y, j)\Big]$$
 
 
 \end{document}
