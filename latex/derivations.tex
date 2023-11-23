@@ -84,6 +84,31 @@ QL(x_1, \dots x_n; y_1, \dots y_n; P, Q, R, \Theta) = \\
 
 \pagebreak
 
+Для того, щоб вирішити проблему з 0 дисперсією для Y зробимо апостеріорну оцінку, а саме додамо доданок:
+
+\begin{align*}
+& QL(x_1, \dots x_n; y_1, \dots y_n; P, Q, R, \Theta) = \\
+& = \sum_{t=1}^{n} \sum_{i=1}^{K} \sum_{j=1}^{M} \sum_{s \in B^M_j} \sum_{\substack{l=1:\\ s_l=1}}^{M} \gamma_{ijsl}^t \cdot [\log{\pi_{ijsl}} + \log{f_i(x^t; \theta_i)} + \log{g_{il}(y^t; \theta_{il})}] = \\
+& = \sum_{t=1}^{n} \sum_{i=1}^{K} \sum_{j=1}^{M} \sum_{s \in B^M_j} \sum_{\substack{l=1:\\ s_l=1}}^{M} \gamma_{ijsl}^t \cdot \Big[\log{p_i} + \log{q_{ij}} + \sum_{k=1}^{M} s_k \log{r_{ik}} -
+\log{\left( \sum_{s^{'} \in B^M_j} r_{i1}^{s^{'}_1} \cdots r_{iM}^{s^{'}_M} \right)} +  \log{r_{il}}\\ 
+& - \log{ \left(\sum_{k=1}^{M} s_k \cdot r_{ik} \right)} + \log{f_i(x^t; \theta_i)} + \log{g_{il}(y^t; \theta_{il})} \Big] + \sum_{i=1}^{K} \sum_{l=1}^{M} \log{p(\theta_{il})}
+\end{align*}
+
+Тут $p(\theta_{il}) \sim NIG(m_{il}, \kappa_{il}, \nu_{il}, s_{il})$
+
+Тобто Normal inverse gamma distribution.
+Суть параметрів цього розподілу в наступному: \\
+$m_{il}$ - апріорне судження для параметра $\mu_{il}$ \\
+$\kappa_{il}$ - наскільки ми довіряємо цьому значенню \\
+$s_{il}$ - пропорційно середньому для $\sigma_{il}$ (невпевнений) \\ 
+$\nu_{il}$ - наскільки сильно ми довіряємо цьому значенню
+
+$$
+NIG(\mu_{il}, \sigma_{il} | m_{il}, \kappa_{il}, \nu_{il}, s_{il}) = 
+\frac{\sqrt{\kappa_{il}}}{\sqrt{2\pi\sigma_{il}^2}} \cdot \frac{s_{il}^{\nu_{il}}}{\Gamma(\nu_{il})} \cdot \left(\frac{1}{\sigma_{il}^2}\right)^{\nu_{il} + 1} \text{exp} \left( -\frac{2s_{il} + \kappa_{il}(\mu_{il} - m_{il})^2}{2 \sigma_{il}^2} \right)
+$$
+
+
 Обмеження: 
 $$\sum_{j=1}^{M} r_{ij} = 1, \:\: i \in 1 \dots K$$
 $$\sum_{j=1}^{M} q_{ij} = 1, \:\: i \in 1 \dots K$$
@@ -95,8 +120,9 @@ $$\sum_{i=1}^{K} p_{i} = 1$$
 & L(x_1, \dots x_n; y_1, \dots y_n; P, Q, R, \Theta) = \\
 & = \sum_{t=1}^{n} \sum_{i=1}^{K} \sum_{j=1}^{M} \sum_{s \in B^M_j} \sum_{\substack{l=1:\\ s_l=1}}^{M} \gamma_{ijsl}^t \cdot \Big[\log{p_i} + \log{q_{ij}} + \sum_{k=1}^{M} s_k \log{r_{ik}} -
 \log{\left( \sum_{s^{'} \in B^M_j} r_{i1}^{s^{'}_1} \cdots r_{iM}^{s^{'}_M} \right)} +  \log{r_{il}}\\ 
-& - \log{ \left(\sum_{k=1}^{M} s_k \cdot r_{ik} \right)} + \log{f_i(x^t; \theta_i)} + \log{g_{il}(y^t; \theta_{il})} \Big] - \alpha \left( \sum_{i=1}^{K} p_i - 1 \right) - \sum_{i=1}^{K} \beta_i \left( \sum_{j=1}^{M} q_{ij} - 1 \right) - \\
-& -  \sum_{i=1}^{K} \kappa_i \left( \sum_{j=1}^{M} r_{ij} - 1 \right)
+& - \log{ \left(\sum_{k=1}^{M} s_k \cdot r_{ik} \right)} - \log{\sigma_i} - \frac{{(x^t - \mu_i)}^2}{2\sigma_i^2} - \log{\sigma_{il}} - \frac{{(y^t - \mu_{il})}^2}{2\sigma_{il}^2} \Big] - \alpha \left( \sum_{i=1}^{K} p_i - 1 \right) - \sum_{i=1}^{K} \beta_i \left( \sum_{j=1}^{M} q_{ij} - 1 \right) - \\
+& -  \sum_{i=1}^{K} \kappa_i \left( \sum_{j=1}^{M} r_{ij} - 1 \right) - 
+\sum_{i=1}^{K} \sum_{l=1}^{M} (2 \nu_{il} + 3) \log{\sigma_{il}} + \frac{2 s_{il} + \kappa_{il}(\mu_{il} - m_{il})^2}{2 \sigma_{il}^2} + C
 \end{align*}
 
 Залишилось знайти похідні:  
@@ -117,7 +143,6 @@ $$\alpha = \sum_{i=1}^{K} \sum_{t=1}^{n} \sum_{j=1}^{M} \sum_{s \in B^M_j} \sum_
 p_x = \frac{1}{n} \cdot \sum_{t=1}^{n} \sum_{j=1}^{M} \sum_{s \in B^M_j} \sum_{\substack{l=1:\\ s_l=1}}^{M} \gamma_{xjsl}^t 
 \end{empheq}
 
-\pagebreak
 
 $$
 \frac{\partial L}{\partial q_{xy}} = \sum_{t=1}^{n} \sum_{s \in B^M_y} \sum_{\substack{l=1:\\ s_l=1}}^{M} \gamma_{xysl}^t \cdot \frac{1}{q_{xy}} - \beta_x = 0
@@ -163,7 +188,6 @@ r_{xy} = \frac{1}{\kappa_x} \sum_{t=1}^{n} \sum_{j=1}^{M} \sum_{s \in B^M_j}
 s_y \sum_{\substack{l=1:\\ s_l=1}}^{M} \gamma_{xjsl}^t \Big]
 $$
 
-\pagebreak
 Відомо, що:
 $$
 \sum_{y=1}^{M} r_{xy} = 1
@@ -185,6 +209,91 @@ s_y \sum_{\substack{l=1:\\ s_l=1}}^{M} \gamma_{xjsl}^t \Big]}
 \end{empheq}
 
 
+Знайдемо інші похідні:
+
+\begin{align*}
+\frac{\partial L}{\partial \mu_{f}} &= \sum_{t=1}^{n} \sum_{j=1}^{M} \sum_{s \in B^M_j} \sum_{\substack{l=1:\\ s_l=1}}^{M} \gamma_{fjsl}^t \cdot \frac{\mu_f - x^t}{\sigma_f^2} = 0 
+\end{align*}
+
+Звідси:
+
+\begin{empheq}[box=\fbox]{align*}
+\mu_f = \frac{\sum_{t=1}^{n} \sum_{j=1}^{M} \sum_{s \in B^M_j} \sum_{\substack{l=1:\\ s_l=1}}^{M} \gamma_{fjsl}^t \cdot x^t} 
+{\sum_{t=1}^{n} \sum_{j=1}^{M} \sum_{s \in B^M_j} \sum_{\substack{l=1:\\ s_l=1}}^{M} \gamma_{fjsl}^t}
+\end{empheq}
+
+\vspace{1cm}
+\begin{align*}
+\frac{\partial L}{\partial \sigma_{f}} &= \sum_{t=1}^{n} \sum_{j=1}^{M} \sum_{s \in B^M_j} \sum_{\substack{l=1:\\ s_l=1}}^{M} \gamma_{fjsl}^t \cdot \frac{\mu_f - x^t}{\sigma_f^2} = 0 
+\end{align*}
+
+Звідси:
+
+\begin{empheq}[box=\fbox]{align*}
+\sigma_f^2 = \frac{\sum_{t=1}^{n} \sum_{j=1}^{M} \sum_{s \in B^M_j} \sum_{\substack{l=1:\\ s_l=1}}^{M} \gamma_{fjsl}^t \cdot {(x^t - \mu_f)}^2} 
+{\sum_{t=1}^{n} \sum_{j=1}^{M} \sum_{s \in B^M_j} \sum_{\substack{l=1:\\ s_l=1}}^{M} \gamma_{fjsl}^t}
+\end{empheq}
+
+\vspace{1cm}
+
+Знайдемо параметри $Y$:
+
+\begin{align*}
+\frac{\partial L}{\partial \mu_{fh}} &= \sum_{t=1}^{n} \sum_{j=1}^{M} \sum_{s \in B^M_j} -\frac{\partial}{\partial \mu_{fh}}
+\sum_{i=1}^{K} \sum_{\substack{l=1:\\ s_l=1}}^{M} \gamma_{ijsl}^t \cdot \frac{(y^t - \mu_{il})^2}{2 \sigma_{il}^2} - \frac{\partial}{\partial \mu_{fh}} \sum_{i=1}^{K} \sum_{l=1}^{M}
+\frac{\kappa_{il} (\mu_{il} - m_{il})^2}{2\sigma_{il}^2} = 0 
+\end{align*}
+
+\begin{align*}
+\frac{\partial L}{\partial \mu_{fh}} &= \sum_{t=1}^{n} \sum_{j=1}^{M} \sum_{s \in B^M_j} \gamma_{fjsh}^t \cdot \frac{y^t - \mu_{fh}}{\sigma_{fh}^2} - 
+\frac{\kappa_{fh} (\mu_{fh} - m_{fh})}{\sigma_{fh}^2} = 0 
+\end{align*}
+
+Звідси:
+
+\begin{empheq}[box=\fbox]{align*}
+\mu_{fh} = \frac{\kappa_{fh} m_{fh} + \sum_{t=1}^{n} \sum_{j=1}^{M} \sum_{s \in B^M_j} \gamma_{fjsh}^t \cdot y^t} 
+{\kappa_{fh} + \sum_{t=1}^{n} \sum_{j=1}^{M} \sum_{s \in B^M_j} 
+\gamma_{fjsh}^t}
+\end{empheq}
+
+\pagebreak
+Тепер знайдемо дисперсію:
+
+\begin{align*}
+\frac{\partial L}{\partial \sigma_{fh}} &= \sum_{t=1}^{n} \sum_{j=1}^{M} \sum_{s \in B^M_j} \frac{\partial}{\partial \sigma_{fh}}
+\sum_{i=1}^{K} \sum_{\substack{l=1:\\ s_l=1}}^{M} \gamma_{ijsl}^t \Big[
+- \log{\sigma_{il}} - \frac{(y^t - \mu_{il})^2}{2 \sigma_{il}^2} \Big] - \\
+&- \frac{\partial}{\partial \sigma_{fh}} \sum_{i=1}^{K} \sum_{l=1}^{M} (2 \nu_{il} + 3) \log{\sigma_{il}} + \frac{2 s_{il} + \kappa_{il}(\mu_{il} - m_{il})^2}{2 \sigma_{il}^2} = 0
+\end{align*}
+
+
+\begin{align*}
+\frac{\partial L}{\partial \sigma_{fh}} &= \sum_{t=1}^{n} \sum_{j=1}^{M} \sum_{s \in B^M_j} \gamma_{fjsh}^t \Big[
+- \frac{1}{\sigma_{fh}} + \frac{(y^t - \mu_{fh})^2}{\sigma_{fh}^3} \Big] - 
+(2 \nu_{fh} + 3) \frac{1}{\sigma_{fh}} + \frac{2 s_{fh} + \kappa_{fh}(\mu_{fh} - m_{fh})^2}{\sigma_{fh}^3} = 0
+\end{align*}
+
+\begin{align*}
+\sum_{t=1}^{n} \sum_{j=1}^{M} \sum_{s \in B^M_j} \gamma_{fjsh}^t \Big[
+- 1 + \frac{(y^t - \mu_{fh})^2}{\sigma_{fh}^2} \Big] - 
+(2 \nu_{fh} + 3) + \frac{2 s_{fh} + \kappa_{fh}(\mu_{fh} - m_{fh})^2}{\sigma_{fh}^2} = 0
+\end{align*}
+
+Звідси:
+
+\begin{empheq}[box=\fbox]{align*}
+\sigma_{fh}^2 = \frac{2 s_{fh} + \kappa_{fh} (\mu_{fh} - m_{fh})^2 + \sum_{t=1}^{n} \sum_{j=1}^{M} \sum_{s \in B^M_j}  \gamma_{fjsh}^t \cdot (y^t - \mu_{fh})^2} 
+{ 2 \nu_{fh} + 3 + 
+\sum_{t=1}^{n} \sum_{j=1}^{M} \sum_{s \in B^M_j} \gamma_{fjsh}^t}
+\end{empheq}
+
+
+\pagebreak
+
+\vspace{2cm}
+Як ще одну можливість ускладненя моделі можемо залишити другий доданок в похідній по $r_{xy}$. Тоді: \\
+
 Розглянемо як це буде виглядати з двома доданками, тобто:
 \begin{align*}
 \frac{\partial L}{\partial r_{xy}} &= \sum_{t=1}^{n} \sum_{j=1}^{M} \sum_{s \in B^M_j} \frac{\partial}{\partial r_{xy}} \sum_{i=1}^{K}  \sum_{\substack{l=1:\\ s_l=1}}^{M} \gamma_{ijsl}^t \Big[\sum_{k=1}^{M} s_k \log{r_{ik}} + \log{r_{il}} \Big] - \\
@@ -204,19 +313,19 @@ s_y \sum_{\substack{l=1:\\ s_l=1}}^{M} \gamma_{xjsl}^t \Big]}
 \end{align*}
 
 Оцінемо знаменник 2 доданку як $C_M^j$ \\ 
+
 Тоді згрупуємо усе разом і отримуємо наступне:
-
-
-\pagebreak
 
 \begin{align*}
 \frac{\partial L}{\partial r_{xy}} &= \sum_{t=1}^{n} \sum_{j=1}^{M} \sum_{s \in B^M_j} \Big[\frac{\gamma_{xjsy}^t }{r_{xy}} + 
 \frac{s_y}{r_{xy}}\sum_{\substack{l=1:\\ s_l=1}}^{M} \gamma_{xjsl}^t - \frac{r_{xy} \sum_{s' \in B^j_M} s^{'}_y \prod_{k=1,  k \neq y}^{M} r_{xk}^{s^{'}_k}}{C_M^j} \sum_{\substack{l=1:\\ s_l=1}}^{M} \gamma_{xjsl}^t \Big] - \kappa_x = 0
 \end{align*}
 
+
+\pagebreak
 Для спрощення запису введемо деякі позначення, а саме:
 $$
-\frac{\sum_{s' \in B^j_M} s^{'}_y \prod_{k=1,  k \neq y}^{M} r_{xk}^{s^{'}_k}}{C_M^j}  \sum_{\substack{l=1:\\ s_l=1}}^{M} \gamma_{xjsl}^t = G(x, y, j)
+\frac{\sum_{s' \in B^j_M} s^{'}_y \prod_{k=1,  k \neq y}^{M} r_{xk}^{s^{'}_k}}{C_M^j}  \sum_{\substack{l=1:\\ s_l=1}}^{M} \gamma_{xjsl}^t = G(x, y, j, s)
 $$
 
 $$
@@ -236,7 +345,7 @@ J(x, y, j)- r_{xy}^{2} G(x, y, j) \Big] = r_{xy} \kappa_x
 
 Перегрупувавши, отримуємо:
 \begin{align*}
-r_{xy}^{2} \sum_{t=1}^{n} \sum_{j=1}^{M} \sum_{s \in B^M_j} G(x, y, j) + r_{xy} \kappa_x - \sum_{t=1}^{n} \sum_{j=1}^{M} \sum_{s \in B^M_j} \Big[ \gamma_{xjsy}^t + J(x, y, j) \Big] = 0
+r_{xy}^{2} \sum_{t=1}^{n} \sum_{j=1}^{M} \sum_{s \in B^M_j} G(x, y, j, s) + r_{xy} \kappa_x - \sum_{t=1}^{n} \sum_{j=1}^{M} \sum_{s \in B^M_j} \Big[ \gamma_{xjsy}^t + J(x, y, j) \Big] = 0
 \end{align*}
 
 Або позначивши відповідні множники, отримуємо:
@@ -254,7 +363,6 @@ r_{xy} = \frac{- \kappa_x \pm \sqrt{\kappa_x^2 + 4ac}}{2a}
 Відомо, що:
 $$\sum_{y=1}^{M} r_{xy} = 1$$
 
-\pagebreak
 
 $$\sum_{y=1}^{M} \frac{- \kappa_x \pm \sqrt{\kappa_x + 4a(x, y)c(x, y)}}{2a(x, y)} = 1$$
 
@@ -266,6 +374,73 @@ $$\sum_{y=1}^{M} \frac{c(x, y)}{\kappa_x} = 1$$
 
 Тобто 
 $$\kappa_x = \sum_{y=1}^{M} c(x, y) = \sum_{y=1}^{M} \sum_{t=1}^{n} \sum_{j=1}^{M} \sum_{s \in B^M_j} \Big[ \gamma_{xjsy}^t + J(x, y, j)\Big]$$
+
+$$\kappa_x = \sum_{y=1}^{M} c(x, y) = \sum_{y=1}^{M} \sum_{t=1}^{n} \sum_{j=1}^{M} \sum_{s \in B^M_j} \Big[ \gamma_{xjsy}^t + s_y \sum_{\substack{l=1:\\ s_l=1}}^{M} \gamma_{xjsl}^t \Big]$$
+
+$$c(x, y) = \sum_{t=1}^{n} \sum_{j=1}^{M} \sum_{s \in B^M_j} \Big[ \gamma_{xjsy}^t + s_y \sum_{\substack{l=1:\\ s_l=1}}^{M} \gamma_{xjsl}^t \Big]$$
+
+
+\begin{align*}
+a(x, y) = \sum_{j=1}^{M} \frac{\sum_{s' \in B^j_M} s^{'}_y \prod_{k=1,  k \neq y}^{M} r_{xk}^{s^{'}_k}}{C_M^j} \sum_{s \in B^M_j}   \sum_{\substack{l=1:\\ s_l=1}}^{M} \sum_{t=1}^{n} \gamma_{xjsl}^t
+\end{align*}
+
+
+\pagebreak
+
+\begin{align*}
+\frac{\partial L}{\partial r_{xy}} &= \sum_{t=1}^{n} \sum_{j=1}^{M} \sum_{s \in B^M_j} \Big[\frac{\gamma_{xjsy}^t }{r_{xy}} + 
+\frac{s_y}{r_{xy}}\sum_{\substack{l=1:\\ s_l=1}}^{M} \gamma_{xjsl}^t \Big] - \\
+& - \sum_{t=1}^{n} \sum_{j=1}^{M} \sum_{s \in B^M_j} \frac{\partial}{\partial r_{xy}} \sum_{i=1}^{K} \sum_{\substack{l=1:\\ s_l=1}}^{M} \gamma_{ijsl}^t \log{\left( \sum_{s^{'} \in B^M_j}  r_{i1}^{s^{'}_1} \cdots r_{iM}^{s^{'}_M} \right)}  - \kappa_x = 0
+\end{align*}
+
+Розкладемо логарифм у ряд до 2-го доданку:
+
+
+\begin{align*}
+\log{\left( \sum_{s^{'} \in B^M_j}  r_{i1}^{s^{'}_1} \cdots r_{iM}^{s^{'}_M} \right)} \approx \sum_{s^{'} \in B^M_j}  r_{i1}^{s^{'}_1} \cdots r_{iM}^{s^{'}_M} - 1 - \frac{1}{2} \left(\sum_{s^{'} \in B^M_j}  r_{i1}^{s^{'}_1} \cdots r_{iM}^{s^{'}_M} - 1 \right)^2
+\end{align*}
+
+Візьмемо похідну: \\
+
+
+\begin{align*}
+& \frac{\partial}{\partial r_{xy}} \sum_{i=1}^{K} 
+\Bigg[ \sum_{s^{'} \in B^M_j}  r_{i1}^{s^{'}_1} \cdots r_{iM}^{s^{'}_M} - 1 - \frac{1}{2} \left(\sum_{s^{'} \in B^M_j}  r_{i1}^{s^{'}_1} \cdots r_{iM}^{s^{'}_M} - 1 \right)^2 \Bigg]
+\cdot \sum_{\substack{l=1:\\ s_l=1}}^{M} \gamma_{ijsl}^t  = \\
+& =
+\Bigg[ r_{xy} \sum_{s' \in B^j_M} s^{'}_y \prod_{k=1,  k \neq y}^{M} r_{xk}^{s^{'}_k} - \left(\sum_{s^{'} \in B^M_j}  r_{x1}^{s^{'}_1} \cdots r_{xM}^{s^{'}_M} - 1 \right) \cdot r_{xy} \sum_{s' \in B^j_M} s^{'}_y \prod_{k=1,  k \neq y}^{M} r_{xk}^{s^{'}_k} \Bigg] \cdot \sum_{\substack{l=1:\\ s_l=1}}^{M} \gamma_{xjsl}^t = \\
+& = r_{xy} \sum_{s' \in B^j_M} s^{'}_y \prod_{k=1,  k \neq y}^{M} r_{xk}^{s^{'}_k} \Bigg[ 2 - \sum_{s^{'} \in B^M_j}  r_{x1}^{s^{'}_1} \cdots r_{xM}^{s^{'}_M} \Bigg] \cdot \sum_{\substack{l=1:\\ s_l=1}}^{M} \gamma_{xjsl}^t 
+\end{align*}
+
+Підствимо в початковий вираз: \\
+
+
+
+\begin{align*}
+\frac{\partial L}{\partial r_{xy}} &= \frac{1}{r_{xy}} \sum_{t=1}^{n} \sum_{j=1}^{M} \sum_{s \in B^M_j} \Big[\gamma_{xjsy}^t  + 
+s_y\sum_{\substack{l=1:\\ s_l=1}}^{M} \gamma_{xjsl}^t \Big] - \\
+& - r_{xy} \sum_{t=1}^{n} \sum_{j=1}^{M} \sum_{s' \in B^M_j} s^{'}_y \prod_{k=1,  k \neq y}^{M} r_{xk}^{s^{'}_k} \Bigg[ 2 - \sum_{s^{'} \in B^M_j}  r_{x1}^{s^{'}_1} \cdots r_{xM}^{s^{'}_M} \Bigg] \cdot \sum_{s \in B^M_j} \sum_{\substack{l=1:\\ s_l=1}}^{M} \gamma_{xjsl}^t  - \kappa_x = 0
+\end{align*}
+
+\begin{align*}
+&-\sum_{t=1}^{n} \sum_{j=1}^{M} \sum_{s \in B^M_j} \Big[\gamma_{xjsy}^t  + s_y\sum_{\substack{l=1:\\ s_l=1}}^{M} \gamma_{xjsl}^t \Big] 
++ r_{xy}^2 \sum_{t=1}^{n} \sum_{j=1}^{M} \sum_{s' \in B^M_j} s^{'}_y \prod_{k=1,  k \neq y}^{M} r_{xk}^{s^{'}_k} \Bigg[ 2 - \sum_{s^{'} \in B^M_j}  r_{x1}^{s^{'}_1} \cdots r_{xM}^{s^{'}_M} \Bigg] \cdot \sum_{s \in B^M_j} \sum_{\substack{l=1:\\ s_l=1}}^{M} \gamma_{xjsl}^t + \\
+&+ \kappa_x r_{xy} = 0
+\end{align*}
+
+Позначивши відповідні множники, отримуємо: \\
+
+$$
+r_{xy}^2 \cdot a + \kappa_x r_{xy} - c = 0
+$$
+
+
+
+
+
+
+
+
 
 
 \end{document}
