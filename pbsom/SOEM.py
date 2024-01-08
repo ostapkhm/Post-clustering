@@ -1,13 +1,14 @@
-from Utils import Lattice
-from SOM import SOM
+from pbsom.Utils import Lattice
+from pbsom.SOM import SOM
+from sklearn.cluster import KMeans
 
 from scipy.stats import multivariate_normal
 import numpy as np
 
 
 class SOEM(SOM):
-    def __init__(self, lattice: Lattice, learning_rate, random_state=None):
-        super().__init__(lattice, learning_rate, random_state)
+    def __init__(self, lattice: Lattice, learning_rate, use_weights, random_state=None):
+        super().__init__(lattice, learning_rate, use_weights, random_state)
 
     def fit(self, X: np.ndarray, epochs, monitor=None):
         if self.random_state is not None:
@@ -16,11 +17,18 @@ class SOEM(SOM):
         neurons_nb = self.lattice_.neurons_nb_
         neurons = self.lattice_.neurons_
 
+        ### Initial estimates using KMeans
+        k_means = KMeans(n_clusters=neurons_nb)
+        k_means.fit(X)
 
         for i in range(0, neurons_nb):
-            neurons[i].weight_ = 1 / neurons_nb
-            neurons[i].mean_ = self.initialize_mean(X)
-            neurons[i].cov_ = self.initialize_cov(X)
+            idxs = (k_means.labels_ == i)
+
+            neurons[i].weight_ = np.sum(idxs)/X.shape[0]
+            neurons[i].mean_ = k_means.cluster_centers_[i]
+            neurons[i].cov_ = np.diag(np.var(X[idxs], axis=0))
+
+        #############################################
 
         for ep in range(epochs):
             self.sigma_ = 1/(np.sqrt(ep + 1) * self.learning_rate_)
@@ -93,6 +101,8 @@ class SOEM(SOM):
 
     
     def find_responsibilities(self, x):
+        neurons = self.lattice_.neurons_
+
         # Parameter for numerical issue
         nu = 450
 
@@ -105,7 +115,10 @@ class SOEM(SOM):
             for l in range(self.lattice_.neurons_nb_):
                 val += self.neighbourhood_func(j, l) * np.log(self.neuron_activation(x, l))
 
-            denominator += np.exp(val + nu)
+            if self.use_weights_:
+                denominator += neurons[j].weight_ * np.exp(val + nu)
+            else:
+                denominator += np.exp(val + nu)
 
         
         for k in range(self.lattice_.neurons_nb_):
@@ -115,8 +128,9 @@ class SOEM(SOM):
                 enumerator += self.neighbourhood_func(k, l) * np.log(self.neuron_activation(x, l))
                 
             responsibilities[k] = np.exp(enumerator + nu) / denominator
-        
-        # print("Denom->", denominator)
+            
+            if self.use_weights_:
+                responsibilities[k] *= neurons[k].weight_
 
         return responsibilities
 

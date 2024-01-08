@@ -1,12 +1,16 @@
-from Utils import Lattice
-from SOM import SOM
+from pbsom.Utils import Lattice
+from pbsom.SOM import SOM
+
+from sklearn.cluster import KMeans
 
 import numpy as np
 
 
 class SOCEM(SOM):
-    def __init__(self, lattice: Lattice, learning_rate, random_state=None):
-        super().__init__(lattice, learning_rate, random_state)
+    def __init__(self, lattice: Lattice, learning_rate, use_weights, lam, random_state=None):
+        super().__init__(lattice, learning_rate, use_weights, random_state)
+
+        self.lambda_ = lam
         
 
     def fit(self, X: np.ndarray, epochs, monitor=None):
@@ -16,11 +20,18 @@ class SOCEM(SOM):
         neurons_nb = self.lattice_.neurons_nb_
         neurons = self.lattice_.neurons_
 
-        ### Initial estimates
+        ### Initial estimates using KMeans
+        k_means = KMeans(n_clusters=neurons_nb)
+        k_means.fit(X)
+
         for i in range(0, neurons_nb):
-            neurons[i].weight_ = 1 / neurons_nb
-            neurons[i].mean_ = self.initialize_mean(X)
-            neurons[i].cov_ = self.initialize_cov(X)
+            idxs = (k_means.labels_ == i)
+
+            neurons[i].weight_ = np.sum(idxs)/X.shape[0]
+            neurons[i].mean_ = k_means.cluster_centers_[i]
+            neurons[i].cov_ = np.diag(np.var(X[idxs], axis=0))
+
+        #############################################
 
         for ep in range(epochs):
             self.sigma_ = 1/(np.sqrt(ep + 1) * self.learning_rate_)
@@ -65,6 +76,8 @@ class SOCEM(SOM):
 
     
     def find_responsibilities(self, x):
+        neurons = self.lattice_.neurons_
+
         # returns responsibilities corresponding to x
         responsibilities = np.zeros(self.lattice_.neurons_nb_)
         
@@ -80,9 +93,15 @@ class SOCEM(SOM):
                 for l in range(self.lattice_.neurons_nb_):
                     val += self.neighbourhood_func(j, l) * np.log(self.neuron_activation(x, l))
 
-                denominator += np.exp(val)
+                if self.use_weights_:
+                    denominator += np.exp(val) * neurons[k].weight_
+                else:
+                    denominator += np.exp(val)
 
             responsibilities[k] = np.exp(enumerator) / denominator
+
+            if self.use_weights_:
+                responsibilities[k] *= neurons[k].weight_
 
         return responsibilities
 
@@ -99,6 +118,9 @@ class SOCEM(SOM):
         for neuron_idx in range(self.lattice_.neurons_nb_):
             weight_denom += len(clusters[neuron_idx])
         
+        old_mean = 0
+        for neuron_idx in range(self.lattice_.neurons_nb_):
+            old_mean += self.lattice_.neurons_[neuron_idx].mean_
 
         for neuron_idx in range(self.lattice_.neurons_nb_):
             numerator_mean = 0
@@ -112,8 +134,16 @@ class SOCEM(SOM):
                     numerator_mean += val * x
                 
                 denominator += val * len(clusters[k])
+
+            ########
+            # Upgrade
+            res = np.linalg.inv(np.eye(N=self.lattice_.neurons_[neuron_idx].cov_.shape[0]) * denominator - 2*self.lambda_*(self.lattice_.neurons_nb_ - 1) * self.lattice_.neurons_[neuron_idx].cov_) @ \
+                    (numerator_mean - 2*self.lambda_*self.lattice_.neurons_[neuron_idx].cov_ @ (old_mean - self.lattice_.neurons_[neuron_idx].mean_))
             
-            self.lattice_.neurons_[neuron_idx].mean_ = numerator_mean / denominator
+            ########
+
+            
+            self.lattice_.neurons_[neuron_idx].mean_ = res
             mean = self.lattice_.neurons_[neuron_idx].mean_
 
             for k in range(self.lattice_.neurons_nb_):
@@ -135,20 +165,3 @@ class SOCEM(SOM):
                 probabilities[i, neuron_idx] = self.neighbourhood_func(winner_idx, neuron_idx)
         
         return np.argmax(probabilities, axis=1)
-
-            
-    @staticmethod
-    def initialize_mean(X):
-        mean = np.zeros(X.shape[1])
-        for i in range(0, X.shape[1]):
-            mean[i] = np.random.uniform(np.min(X[:, i]), np.max(X[:, i]))
-
-        return mean
-
-    @staticmethod
-    def initialize_cov(X):
-        cov_matrix = np.zeros((X.shape[1], X.shape[1]))
-        for i in range(0, X.shape[1]):
-            cov_matrix[i, i] = np.random.uniform(0, (np.max(X[:, i]) - np.min(X[:, i]))/6)**2
-            
-        return cov_matrix

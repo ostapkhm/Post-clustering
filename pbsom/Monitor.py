@@ -1,4 +1,4 @@
-from SOM import SOM
+from pbsom.SOM import SOM
 import numpy as np
 import seaborn as sns
 from matplotlib.patches import Ellipse
@@ -25,19 +25,24 @@ class Monitor:
         self.covs_[self.idx_] = np.array([neuron.cov_ for neuron in self.lattice_.neurons_])
         self.idx_ += 1
     
-    def draw(self, ax, epoch_nb, data, labels, means, custom_palette):
+    def draw(self, ax, title, epoch_nb, data, means, custom_palette, labels):
         artists = []
 
         # Scatter plot
-        scatter = sns.scatterplot(x=data[:, 0], y=data[:, 1], alpha=0.7, hue=labels, ax=ax, palette=custom_palette)
+        if labels is not None:
+            scatter = sns.scatterplot(x=data[:, 0], y=data[:, 1], alpha=0.7, hue=labels, ax=ax, palette=custom_palette)
+        else:
+            scatter = sns.scatterplot(x=data[:, 0], y=data[:, 1], alpha=0.7, ax=ax)
+        
         artists.append(scatter)
 
         # Plot true parameters
-        true_params = []
-        for mean, color in zip(means, custom_palette):
-            true_param = ax.plot(mean[0], mean[1], color=color, markersize=12, marker='^')[0]
-            true_params.append(true_param)
-        artists.extend(true_params)
+        if means is not None:
+            true_params = []
+            for mean, color in zip(means, custom_palette):
+                true_param = ax.plot(mean[0], mean[1], color=color, markersize=12, marker='^')[0]
+                true_params.append(true_param)
+            artists.extend(true_params)
 
         # Plot neuron parameters
         neuron_params = []
@@ -58,7 +63,7 @@ class Monitor:
 
         ax.set_xlabel('X-axis')
         ax.set_ylabel('Y-axis')
-        ax.set_title('2D Gaussian Mixture Dataset')
+        ax.set_title(title)
         ax.legend(loc='best')
 
         return artists
