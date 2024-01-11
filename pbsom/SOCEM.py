@@ -6,19 +6,16 @@ import numpy as np
 
 
 class SOCEM(SOM):
-    def __init__(self, lattice: Lattice, learning_rate, use_weights, random_state=None):
-        super().__init__(lattice, learning_rate, use_weights, random_state)
+    def __init__(self, lattice: Lattice, learning_rate, tol=1e-4, max_iter=100, use_weights=False, random_state=None):
+        super().__init__(lattice, learning_rate, tol, max_iter, use_weights, random_state)
         
 
-    def fit(self, X: np.ndarray, epochs, monitor=None):
-        if self.random_state is not None:
-            np.random.seed(self.random_state)
-
+    def fit(self, X: np.ndarray, monitor=None):
         neurons_nb = self.lattice_.neurons_nb_
         neurons = self.lattice_.neurons_
 
         ### Initial estimates using KMeans ###
-        k_means = KMeans(n_clusters=neurons_nb)
+        k_means = KMeans(n_clusters=neurons_nb, random_state=self.random_state)
         k_means.fit(X)
 
         for i in range(0, neurons_nb):
@@ -30,9 +27,13 @@ class SOCEM(SOM):
 
         #############################################
 
-        for ep in range(epochs):
-            self.sigma_ = 1 / (np.sqrt(ep + 1) * self.learning_rate_)
-            
+        iter_nb = 0
+        prev_log_likelihood = 0
+        convergence = np.inf
+
+        while iter_nb < self.max_iter_ and convergence > self.tol_:
+            self.sigma_ = 1 / (np.sqrt(iter_nb + 1) * self.learning_rate_)
+
             if monitor is not None:
                 monitor.save()
 
@@ -41,17 +42,30 @@ class SOCEM(SOM):
             ### M-step ###
             self.update_nodes(X, clusters)
 
+            convergence = np.abs(self.log_likelihood - prev_log_likelihood)
+            prev_log_likelihood = self.log_likelihood
+            iter_nb += 1
+
+
     def neighbourhood_func(self, r, s):
         alpha = 0.5 / self.sigma_**2
         return np.exp(-alpha * self.distance(self.lattice_.neurons_[r].coord_, self.lattice_.neurons_[s].coord_))
     
+
     def neuron_activation(self, x, neuron_idx):
         neuron = self.lattice_.neurons_[neuron_idx]
         d = x.shape[0]
         exponential_term = np.exp(-0.5 * ((x - neuron.mean_).T @ np.linalg.inv(neuron.cov_) @ (x - neuron.mean_)))
         normalization_factor = ((2 * np.pi) ** (d / 2)) * np.linalg.det(neuron.cov_) ** 0.5
 
-        return exponential_term / normalization_factor
+        # delta_min for numerical issues
+        delta_min = 2.225e-308
+
+        res = exponential_term / normalization_factor
+        if res < delta_min:
+            return delta_min
+
+        return res
     
     
     def find_responsibilities(self, x):
@@ -72,7 +86,7 @@ class SOCEM(SOM):
             if self.use_weights_:
                 responsibilities[k] *= neurons[k].weight_
 
-        return responsibilities / np.nansum(responsibilities)
+        return responsibilities / np.sum(responsibilities), np.log(responsibilities)
 
 
     def update_nodes(self, X, clusters):
@@ -103,17 +117,22 @@ class SOCEM(SOM):
 
     def predict(self, X):
         y_pred = np.zeros(X.shape[0])
+        log_likelihood = 0
 
         for i, x in enumerate(X):
             # Find responsibilities for each x
             # E step
-            responsibilities = self.find_responsibilities(x)
+            responsibilities, partial_ll = self.find_responsibilities(x)
             
             # Define cluster for x based on largest posterior probability
             # C step
             k = np.argmax(responsibilities)
+
+            log_likelihood += partial_ll[k]
             y_pred[i] = k
-        
+    
+        # Save log_likelihood
+        self.log_likelihood = log_likelihood
         return y_pred
 
 

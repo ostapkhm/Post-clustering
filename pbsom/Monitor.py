@@ -10,6 +10,7 @@ class Monitor:
         self.lattice_ = som.lattice_
         self.model_ = som
         
+        self.log_likelihoods = np.zeros(epochs)
         self.vars_ = np.zeros(epochs)
         self.weights_ = np.zeros(shape=(epochs, self.lattice_.neurons_nb_))
         self.means_ = np.zeros(shape=(epochs, self.lattice_.neurons_nb_, 2))
@@ -19,6 +20,7 @@ class Monitor:
     
 
     def save(self):
+        self.log_likelihoods[self.idx_] = self.model_.log_likelihood
         self.vars_[self.idx_] =  self.model_.sigma_**2
         self.weights_[self.idx_] = np.array([neuron.weight_ for neuron in self.lattice_.neurons_])
         self.means_[self.idx_] = np.array([neuron.mean_ for neuron in self.lattice_.neurons_])
@@ -57,7 +59,7 @@ class Monitor:
             neuron_params.append(neuron_param)
         artists.extend(neuron_params)
 
-        # Draw a grid sorted by neuron lattice coordinates
+        # Draw a grid
         means = np.vstack((self.means_[epoch_nb], self.means_[epoch_nb][0]))
         grid = ax.plot(means[:, 0], means[:, 1], 'k-')[0]
         artists.append(grid)
