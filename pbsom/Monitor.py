@@ -3,13 +3,13 @@ import numpy as np
 import seaborn as sns
 from matplotlib.patches import Ellipse
 
+
 class Monitor:
     def __init__(self, epochs, som:SOM):
         self.epochs_ = epochs
         self.lattice_ = som.lattice_
         self.model_ = som
-
-        self.neurons_idx_ = np.zeros(shape=(epochs, self.lattice_.neurons_nb_))
+        
         self.vars_ = np.zeros(epochs)
         self.weights_ = np.zeros(shape=(epochs, self.lattice_.neurons_nb_))
         self.means_ = np.zeros(shape=(epochs, self.lattice_.neurons_nb_, 2))
@@ -17,14 +17,15 @@ class Monitor:
 
         self.idx_ = 0
     
+
     def save(self):
-        self.neurons_idx_[self.idx_] = np.array([neuron.coord_[0] * self.lattice_.size_[0]  + neuron.coord_[1]  for neuron in self.lattice_.neurons_])
         self.vars_[self.idx_] =  self.model_.sigma_**2
         self.weights_[self.idx_] = np.array([neuron.weight_ for neuron in self.lattice_.neurons_])
         self.means_[self.idx_] = np.array([neuron.mean_ for neuron in self.lattice_.neurons_])
         self.covs_[self.idx_] = np.array([neuron.cov_ for neuron in self.lattice_.neurons_])
         self.idx_ += 1
     
+
     def draw(self, ax, title, epoch_nb, data, means, custom_palette, labels):
         artists = []
 
