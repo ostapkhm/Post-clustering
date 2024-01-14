@@ -6,24 +6,32 @@ import numpy as np
 
 
 class SOCEM(SOM):
-    def __init__(self, lattice: Lattice, learning_rate, tol=1e-4, max_iter=100, use_weights=False, random_state=None):
-        super().__init__(lattice, learning_rate, tol, max_iter, use_weights, random_state)
+    def __init__(self, lattice: Lattice, learning_rate, tol=1e-4, max_iter=100, use_weights=False, random_state=None, reg_covar=1e-6):
+        super().__init__(lattice, learning_rate, tol, max_iter, use_weights, random_state, reg_covar)
         
 
     def fit(self, X: np.ndarray, monitor=None):
+        self.n_features_in_ = X.shape[1]
         neurons_nb = self.lattice_.neurons_nb_
         neurons = self.lattice_.neurons_
+
+        if monitor is not None:
+            monitor.initialize_params()
 
         ### Initial estimates using KMeans ###
         k_means = KMeans(n_clusters=neurons_nb, random_state=self.random_state)
         k_means.fit(X)
 
+        # for numerical issues
+        reg_covar = self.reg_covar_ * np.eye(self.n_features_in_)
         for i in range(0, neurons_nb):
             idxs = (k_means.labels_ == i)
 
-            neurons[i].weight_ = np.sum(idxs)/X.shape[0]
+            neurons[i].weight_ = np.sum(idxs) / X.shape[0]
             neurons[i].mean_ = k_means.cluster_centers_[i]
-            neurons[i].cov_ = np.diag(np.var(X[idxs], axis=0))
+
+            # print(np.var(X[idxs], axis=0))
+            neurons[i].cov_ = np.diag(np.var(X[idxs], axis=0)) + reg_covar
 
         #############################################
 
@@ -70,27 +78,44 @@ class SOCEM(SOM):
     
     def find_responsibilities(self, x):
         # returns responsibilities corresponding to x
+
+        # for numerical issues
+        nu = 744
+        
         neurons = self.lattice_.neurons_
         responsibilities = np.zeros(self.lattice_.neurons_nb_)
         log_neuron_activation = np.zeros(self.lattice_.neurons_nb_)
 
         for l in range(self.lattice_.neurons_nb_):
             log_neuron_activation[l] = np.log(self.neuron_activation(x, l))
-        
+
         for k in range(self.lattice_.neurons_nb_):
             enumerator = 0
             for l in range(self.lattice_.neurons_nb_):
                 enumerator += self.neighbourhood_func(k, l) * log_neuron_activation[l]
-            
-            responsibilities[k] = np.exp(enumerator)
-            if self.use_weights_:
+
+            responsibilities[k] = enumerator
+
+        log_likelihoods = responsibilities
+
+        # corner case
+        if np.max(responsibilities) < -nu:
+            responsibilities -= np.max(responsibilities)
+
+        responsibilities = np.exp(responsibilities)
+
+        if self.use_weights_:
+            for k in range(self.lattice_.neurons_nb_):
                 responsibilities[k] *= neurons[k].weight_
 
-        return responsibilities / np.sum(responsibilities), np.log(responsibilities)
+        return responsibilities / np.sum(responsibilities), log_likelihoods
 
 
     def update_nodes(self, X, clusters):
         # Updating all neuron based on batch mode
+
+        # for numerical issues
+        reg_covar = self.reg_covar_ * np.eye(self.n_features_in_)
 
         for neuron_idx in range(self.lattice_.neurons_nb_):
             numerator_mean = 0
@@ -111,12 +136,12 @@ class SOCEM(SOM):
                 for x in X[clusters==k]:
                     numerator_cov += val * np.outer(x - mean, x - mean)
             
-            self.lattice_.neurons_[neuron_idx].cov_ = numerator_cov / denominator
+            self.lattice_.neurons_[neuron_idx].cov_ = numerator_cov / denominator + reg_covar
             self.lattice_.neurons_[neuron_idx].weight_ = len(X[clusters==neuron_idx]) / len(X)
 
 
     def predict(self, X):
-        y_pred = np.zeros(X.shape[0])
+        y_pred = np.zeros(X.shape[0], dtype='int32')
         log_likelihood = 0
 
         for i, x in enumerate(X):

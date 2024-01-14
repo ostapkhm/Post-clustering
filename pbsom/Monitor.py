@@ -5,19 +5,21 @@ from matplotlib.patches import Ellipse
 
 
 class Monitor:
-    def __init__(self, epochs, som:SOM):
-        self.epochs_ = epochs
+    def __init__(self, som:SOM):
         self.lattice_ = som.lattice_
         self.model_ = som
-        
+    
+    def initialize_params(self):
+        epochs = self.model_.max_iter_
+        features_nb = self.model_.n_features_in_
+    
         self.log_likelihoods = np.zeros(epochs)
         self.vars_ = np.zeros(epochs)
         self.weights_ = np.zeros(shape=(epochs, self.lattice_.neurons_nb_))
-        self.means_ = np.zeros(shape=(epochs, self.lattice_.neurons_nb_, 2))
-        self.covs_ = np.zeros(shape=(epochs, self.lattice_.neurons_nb_, 2, 2))
+        self.means_ = np.zeros(shape=(epochs, self.lattice_.neurons_nb_, features_nb))
+        self.covs_ = np.zeros(shape=(epochs, self.lattice_.neurons_nb_, features_nb, features_nb))
 
         self.idx_ = 0
-    
 
     def save(self):
         self.log_likelihoods[self.idx_] = self.model_.log_likelihood
@@ -29,6 +31,9 @@ class Monitor:
     
 
     def draw(self, ax, title, epoch_nb, data, means, custom_palette, labels):
+        if self.model_.n_features_in_ != 2:
+            raise ValueError("Features numbers should be 2!")
+        
         artists = []
 
         # Scatter plot
