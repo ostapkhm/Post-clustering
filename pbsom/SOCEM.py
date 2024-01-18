@@ -29,8 +29,6 @@ class SOCEM(SOM):
 
             neurons[i].weight_ = np.sum(idxs) / X.shape[0]
             neurons[i].mean_ = k_means.cluster_centers_[i]
-
-            # print(np.var(X[idxs], axis=0))
             neurons[i].cov_ = np.diag(np.var(X[idxs], axis=0)) + reg_covar
 
         #############################################
