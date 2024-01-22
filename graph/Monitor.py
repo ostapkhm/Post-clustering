@@ -12,12 +12,13 @@ class Monitor:
     def initialize_params(self):
         epochs = self.model_.max_iter_
         features_nb = self.model_.n_features_in_
+        neurons_nb = self.lattice_.neurons_nb_
     
         self.log_likelihoods = np.zeros(epochs)
         self.vars_ = np.zeros(epochs)
-        self.weights_ = np.zeros(shape=(epochs, self.lattice_.neurons_nb_))
-        self.means_ = np.zeros(shape=(epochs, self.lattice_.neurons_nb_, features_nb))
-        self.covs_ = np.zeros(shape=(epochs, self.lattice_.neurons_nb_, features_nb, features_nb))
+        self.weights_ = np.zeros(shape=(epochs, neurons_nb))
+        self.means_ = np.zeros(shape=(epochs, neurons_nb, features_nb))
+        self.covs_ = np.zeros(shape=(epochs, neurons_nb, features_nb, features_nb))
 
         self.idx_ = 0
 

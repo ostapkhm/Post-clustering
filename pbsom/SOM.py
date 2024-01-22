@@ -10,9 +10,13 @@ class SOM(ABC):
         self.max_iter_ = max_iter
         self.use_weights_ = use_weights
         self.random_state = random_state
+        
+        # H matrix - lateral interaction between neurons
+        self.H_ = None
 
         self.n_features_in_ = None
         self.reg_covar_ = reg_covar
+        
 
     @abstractmethod
     def fit(self, X, epochs, monitor=None):

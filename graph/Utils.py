@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from collections import OrderedDict
 from queue import Queue
+import numpy as np
 
 class Graph:
     def __init__(self, n, m, graph_type):
@@ -20,7 +21,7 @@ class Graph:
         for i in range(0, n):
             for j in range(0, m):
                 # Corner case 
-                current_idx = idx(i, j)
+                current_idx = idx(i, j) 
 
                 neighbours = []
                 if i - 1 >= 0:
@@ -35,14 +36,14 @@ class Graph:
                 self.adj_list_[current_idx] = neighbours
     
 
-    def delete_node(self, idx):
-        neighbours = self.adj_list_[idx]
+    def delete_vertex(self, v):
+        neighbours = self.adj_list_[v]
 
         for neighbour in neighbours:
             neighbour_list = self.adj_list_[neighbour]
-            neighbour_list.remove(idx)
+            neighbour_list.remove(v)
         
-        del self.adj_list_[idx]
+        del self.adj_list_[v]
         self.nodes_amount_ -= 1
     
 
@@ -52,12 +53,22 @@ class Graph:
     
 
     def shortest_pairwise_path(self):
-        # calculate all pairwise distances using bfs 
-        path_distance = {}
+        # Calculate all pairwise distances using bfs and return distance matrix
+        path_distance = np.zeros(shape=(self.nodes_amount_, self.nodes_amount_))
 
-        for current_vertex in self.adj_list_.keys():
+        vertex_to_idx = {vertex: idx for idx, vertex in enumerate(self.adj_list_)}
+
+        for current_vertex in self.adj_list_:
             parent_vertices = self._bfs(current_vertex)
             for vertex in parent_vertices:
+                cur_vertex_idx =  vertex_to_idx[current_vertex]
+                vertex_idx = vertex_to_idx[vertex]
+
+                if path_distance[vertex_idx, cur_vertex_idx] != 0:
+                    # Symmetric matrix
+                    path_distance[cur_vertex_idx, vertex_idx] = path_distance[vertex_idx, cur_vertex_idx]
+                    continue
+
                 distance = 0
                 prev = vertex
                 
@@ -65,15 +76,14 @@ class Graph:
                     prev = parent_vertices[prev]
                     distance += 1
                     
-                path_distance[self.cantor_pairing(current_vertex, vertex)] = distance
-            path_distance[self.cantor_pairing(current_vertex, current_vertex)] = 0
+                path_distance[cur_vertex_idx, vertex_idx] = distance
 
         return path_distance
     
     
     def _bfs(self, vertex):
         queue = Queue()
-        visited = {key: False for key in self.adj_list_.keys()}
+        visited = {key: False for key in self.adj_list_}
         prev = {}
 
         queue.put(vertex)
@@ -89,10 +99,6 @@ class Graph:
                     visited[neighbour] = True
                     prev[neighbour] = node
         return prev
-
-    @staticmethod
-    def cantor_pairing(a, b):
-        return ((a + b) * (a + b + 1)) // 2 + b
 
 
 class Neuron:
@@ -127,9 +133,6 @@ class Lattice(ABC):
     def delete_edge(self, v1, v2):
         self.graph_.delete_edge(v1, v2)
 
-    def get_pairwise_distance(self, v1, v2):
-        return self.pairwise_distance_[self.graph_.cantor_pairing(v1, v2)]
-
 
 class RectangularLattice(Lattice):
     def generate(self):
@@ -140,5 +143,4 @@ class RectangularLattice(Lattice):
             for j in range(0, self.size_[1]):
                 self.neurons_[i * self.size_[1] + j] = Neuron(None, None, None)
 
-        self.pairwise_distance_ = self.graph_.shortest_pairwise_path()
-        
+        self.update_distances()
