@@ -353,21 +353,22 @@ class PbSOMClustering:
 
     def combine_gmm_entropy(self, X):
         responsibilities = self.find_responsibilities(X)
-        history = []
-
-        entropies = []
         clusters_nb = self.neurons_nb_
+        y_pred_history = np.zeros((clusters_nb, X.shape[0]))
+        entropies = np.zeros(clusters_nb)
+        merged_numbers = np.zeros(clusters_nb)
+
         neurons_indexes = list(self.neurons_.keys())
         y_pred = np.zeros(X.shape[0], dtype='int32')
         clusters = np.argmax(responsibilities, axis=1)
 
-        history.append(deepcopy(y_pred))
-
         for i, k in enumerate(clusters):
             y_pred[i] = neurons_indexes[k]
         
-        entropies.append(-np.sum(responsibilities * np.log(responsibilities)))
+        entropies[0] = -np.sum(responsibilities * np.log(responsibilities))
+        y_pred_history[0] = y_pred
 
+        idx = 1
         while clusters_nb > 1:
 
             max_diff_entropy = -np.inf
@@ -395,19 +396,19 @@ class PbSOMClustering:
             responsibilities[:, k] = combined_resp
 
             y_pred[y_pred == neurons_indexes[k_p]] = neurons_indexes[k]
-            history.append(deepcopy(y_pred))
-            number_of_merged_points = np.sum(y_pred == neurons_indexes[k])
+            y_pred_history[idx] = deepcopy(y_pred)
+            merged_numbers[idx] = np.sum(y_pred == neurons_indexes[k])
 
             del neurons_indexes[k_p]
-            entropies.append(-np.sum(responsibilities * np.log(responsibilities)))
+            entropies[idx] = -np.sum(responsibilities * np.log(responsibilities))
             
+            idx += 1
             clusters_nb -= 1
-        
 
-        clusters_removed = self.pcws_reg(np.arange(len(entropies)), entropies, True)
+        clusters_removed = self.pcws_reg(np.cumsum(merged_numbers), entropies, True)
         print("Clusters removed number:{}".format(clusters_removed))
 
-        return history[clusters_removed]
+        return y_pred_history
     
 
     def pcws_reg(self, x, y, verbose=False):
