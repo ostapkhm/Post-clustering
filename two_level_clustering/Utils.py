@@ -304,3 +304,21 @@ def reestimate_params(neuron1, neuron2):
     neuron1.weight_ = weight
     neuron1.mean_ = mean
     neuron1.cov_ = covariance
+
+def generate_mixture(means, covariances, probabilities, n_samples, random_state=None):
+    # Set random seed for reproducibility
+    if random_state is not None:
+        np.random.seed(random_state)
+
+    mixture_indexes = np.random.choice(a=probabilities.size, p=probabilities, size=n_samples)
+    
+    labels = []
+    data = []
+    for idx in mixture_indexes:
+        mean = means[idx]
+        cov = covariances[idx]
+
+        data.append(np.random.multivariate_normal(mean, cov))
+        labels.append(idx)
+
+    return np.array(data), np.array(labels)
