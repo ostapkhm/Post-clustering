@@ -21,7 +21,6 @@ class PbSOMClustering:
     def fit(self, X, monitor=None):
         self.n_features_in_ = X.shape[1]
 
-        print("EM reduction started:")
         ### First pass:
         # EM reduction
         self.em_reduction(X, monitor)
@@ -156,7 +155,6 @@ class PbSOMClustering:
                     was_killed = False
 
                     if not weights[current_comp]:
-                        print("Neuron: {} killed".format(neuron_idx))
                         was_killed = True
                         del self.neurons_[neuron_idx]
                         del neuron_indexes[current_comp]
@@ -191,7 +189,6 @@ class PbSOMClustering:
                 current_comp = np.argmin(weights)
                 neuron_idx = neuron_indexes[current_comp]
 
-                print("Neuron: {} killed".format(neuron_idx))
                 del self.neurons_[neuron_idx]
                 del neuron_indexes[current_comp]
                 self.neurons_nb_ -= 1

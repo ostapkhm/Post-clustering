@@ -6,13 +6,12 @@ from .Utils import Neuron, Lattice
 
 
 class SOCEM:
-    def __init__(self, lattice: Lattice, sigma_start, sigma_step, betta, cov_type, tol=1e-4, max_iter=100, use_weights=False, random_state=None, reg_covar=1e-6):
+    def __init__(self, lattice: Lattice, sigma_start, sigma_step, betta, cov_type, tol=1e-4, max_iter=100, use_weights=False, random_state=None, reg_covar=1e-6, verbose=False):
         # For SOCEM
         self.lattice_ = lattice
         self.sigma_start_ = sigma_start
         self.sigma_step_ = sigma_step
         self.H_ = None 
-        # For EM
         self.tol_ = tol
         self.max_iter_ = max_iter
         self.use_weights_ = use_weights
@@ -24,9 +23,10 @@ class SOCEM:
         
         self.n_features_in_ = None
         self.random_state = random_state
+        self.verbose_ = verbose
         
 
-    def fit(self, X: np.ndarray, monitor=None):
+    def fit(self, X: np.ndarray, monitor=None, verbose=False):
         self.estimate_params(X, monitor)
         y_pred = self.predict(X)
         
@@ -40,7 +40,8 @@ class SOCEM:
 
         map_changed = True
         while map_changed:
-            print("Neurons->", self.lattice_.neurons_.keys())
+            if self.verbose_:
+                print("Neurons->", self.lattice_.neurons_.keys())
             ### Merge vertices based on bhattacharyya distance ###
             map_changed = self.delete_vertex_bhattacharyya()
             self.delete_empty_clusters()
@@ -49,7 +50,6 @@ class SOCEM:
             if monitor is not None:
                 monitor.save(y_pred, True)
                 
-            print("Map changed -> ", map_changed)
 
 
     def estimate_params(self, X: np.ndarray, monitor=None):
@@ -206,8 +206,9 @@ class SOCEM:
             if weight == 0:
                 vertcies_for_deletion.append(vertex)
         
-        if vertcies_for_deletion:
-            print("Empty clusters detected")
+        if self.verbose_:
+            if vertcies_for_deletion:
+                print("Empty clusters detected")
 
         for vertex in vertcies_for_deletion:
             self.lattice_.delete_vertex(vertex)
@@ -242,16 +243,18 @@ class SOCEM:
                     min_distance = distance
                     best_pair = (vertex1, vertex2)
         
-        print("Best pair ->", best_pair)
+        if self.verbose_:
+            print("Best pair ->", best_pair)
 
         if np.exp(-min_distance) >= self.betta_:
             self.lattice_.collapse_edge(best_pair[0], best_pair[1])
-            print("Merged -> {}, {}".format(best_pair[0], best_pair[1]))
+
+            if self.verbose_:
+                print("Merged -> {}, {}".format(best_pair[0], best_pair[1]))
             self.H_ = np.eye(self.lattice_.neurons_nb_)
 
             return True
-        
-        print("Not merged!")
+    
         return False
 
 

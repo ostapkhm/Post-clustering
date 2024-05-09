@@ -13,6 +13,7 @@ class Monitor:
         self.idx_ = 0
         self.log_likelihoods = []
         self.vars_ = []
+        self.criteria_vals_ = []
         self.labels_ = []
 
         self.weights_ = []
@@ -23,7 +24,7 @@ class Monitor:
         self.neurons_graphs_ = []
     
 
-    def save(self, labels, structure_changed=False):
+    def save(self, labels, structure_changed=False, use_criteria=False):
         lattice = self.model_.lattice_
 
         if structure_changed or self.idx_ == 0:
@@ -37,6 +38,9 @@ class Monitor:
 
         self.log_likelihoods.append(self.model_.log_likelihood_)
         self.vars_.append(self.model_.sigma_**2)
+
+        if use_criteria:
+            self.criteria_vals_.append([lattice.neurons_nb_, self.model_.criteria_])
 
         self.weights_.append(lattice.get_weights())
         self.means_.append(lattice.get_means())

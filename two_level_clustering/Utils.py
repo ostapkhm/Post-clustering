@@ -249,6 +249,9 @@ def pcws_reg(x, y, verbose=False):
         plt.plot(x, y, 'ko')
         plt.plot(x[:optimal_clust_nb+1], a1f * x[:optimal_clust_nb+1] + b1f, 'r--')
         plt.plot(x[optimal_clust_nb:], a2f * x[optimal_clust_nb:] + b2f, 'r--')
+        plt.xlabel("Кількість об'єднанних точок")
+        plt.ylabel('Значення ентропії')
+
         plt.show()
 
     return optimal_clust_nb
@@ -305,11 +308,7 @@ def reestimate_params(neuron1, neuron2):
     neuron1.mean_ = mean
     neuron1.cov_ = covariance
 
-def generate_mixture(means, covariances, probabilities, n_samples, random_state=None):
-    # Set random seed for reproducibility
-    if random_state is not None:
-        np.random.seed(random_state)
-
+def generate_mixture(means, covariances, probabilities, n_samples):
     mixture_indexes = np.random.choice(a=probabilities.size, p=probabilities, size=n_samples)
     
     labels = []

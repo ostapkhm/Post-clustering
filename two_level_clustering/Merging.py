@@ -7,11 +7,13 @@ from .Utils import Neuron, pcws_reg, multi_root, reestimate_params
 
 
 class Merging:
-    def __init__(self, weights, means, covs, merge_method, merge_threshold=None):
+    def __init__(self, weights, means, covs, merge_method, merge_threshold=None, verbose=False):
         self.initialize_clusters(weights, means, covs)
         self.merge_method_ = merge_method
         self.beta_ = merge_threshold
         self.labels_ = None
+
+        self.verbose_ = verbose
 
 
     def initialize_clusters(self, weights, means, covs):
@@ -101,7 +103,9 @@ class Merging:
                         best_pair = (p, q)
 
             k, k_p = best_pair
-            print("Best pair:{}, {} to merge".format(neurons_indexes[k], neurons_indexes[k_p]))
+
+            if self.verbose_:
+                print("Best pair:{}, {} to merge".format(neurons_indexes[k], neurons_indexes[k_p]))
 
             combined_resp = responsibilities[:, k] + responsibilities[:, k_p]
             # Remain the smallest label and update assignmemts
@@ -119,8 +123,9 @@ class Merging:
             idx += 1
             clusters_nb -= 1
 
-        clusters_removed = pcws_reg(np.cumsum(merged_numbers), entropies, verbose)
-        print("Clusters removed number:{}".format(clusters_removed))
+        clusters_removed = pcws_reg(np.cumsum(merged_numbers), entropies, self.verbose_)
+        if self.verbose_:
+            print("Clusters removed number:{}".format(clusters_removed))
 
         return y_pred_history[clusters_removed]
 
@@ -146,7 +151,8 @@ class Merging:
                     ratios[idx1, idx2] = ratio
                     ratios[idx2, idx1] = ratio
         
-        print("Precomputed!")
+        if self.verbose_:
+            print("Precomputed!")
 
         while self.clusters_nb_ >= 2:
             max_ratio = -np.inf
@@ -159,9 +165,9 @@ class Merging:
                     if ratios[idx1, idx2] > max_ratio:
                         max_ratio = ratios[idx1, idx2]
                         best_pair = (key1, key2)
-
-            print("Best pair ->", best_pair)
-            print("Max ratio ->", max_ratio)
+            if self.verbose_:
+                print("Best pair ->", best_pair)
+                print("Max ratio ->", max_ratio)
 
             if max_ratio >= self.beta_:
                 # Reestimate parameters of merged pair and save to smallest neuron key
@@ -175,8 +181,9 @@ class Merging:
                 del self.clusters_[best_pair[1]]
                 del key_to_idx[best_pair[1]]
                 self.clusters_nb_ -= 1
-    
-                print("Merged -> {}, {}".format(best_pair[0], best_pair[1]))
+                
+                if self.verbose_:
+                    print("Merged -> {}, {}".format(best_pair[0], best_pair[1]))
 
                 y_pred[y_pred == best_pair[1]] = best_pair[0]
                 self.H_ = np.eye(self.clusters_nb_)

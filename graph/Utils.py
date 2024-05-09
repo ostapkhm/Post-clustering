@@ -314,7 +314,7 @@ class Lattice(ABC):
             to_idx[idx1] = i
             for j, (idx2, neuron2) in enumerate(self.neurons_.items()):
                 if i != j:
-                    heaps[i].push((min(idx1, idx2), max(idx1, idx2)), self.__euclidean_distance(neuron1, neuron2))
+                    heaps[i].push((min(idx1, idx2), max(idx1, idx2)), self.__js_divergence(neuron1, neuron2))
                     
 
         ### Erease adj_list_

@@ -22,6 +22,7 @@ class SOCEM(SOM):
         self.merge_method_ = None
         self.smoothing_factor_ = smoothing_factor
         self.cov_type_ = cov_type
+        self.criteria_ = None
 
         if method == 'bhattacharyya':
             self.merge_method_ = self.delete_vertex_bhattacharyya
@@ -29,6 +30,8 @@ class SOCEM(SOM):
             self.merge_method_ = self.delete_vertex_ridgeline
         elif method == 'mdl':
             self.merge_method_ = self.delete_vertex_mdl
+        elif method == 'entropy':
+            self.merge_method_ = self.delete_vertex_entropy
         
 
     def fit(self, X: np.ndarray, return_monitors=False):
@@ -38,7 +41,7 @@ class SOCEM(SOM):
 
         self.sigma_ = self.sigma_start_
 
-        while map_changed :
+        while map_changed:
             print("Neurons->", self.lattice_.neurons_.keys())
 
             ### Estimate parameters of current map ###
@@ -50,7 +53,8 @@ class SOCEM(SOM):
 
             ### Delete empty clusters ###
             self.delete_empty_clusters()
-            monitor.save(y_pred, True)
+            self.criteria_ = self.calculate_mdl(X)
+            monitor.save(y_pred, True, True)
             
             ### Reconstruct map ###
             self.reconstruct_map()
@@ -171,7 +175,7 @@ class SOCEM(SOM):
             for k in range(neurons_nb):
                 responsibilities[:, k] *= neurons[neurons_indexes[k]].weight_
 
-        return responsibilities / np.sum(responsibilities), log_neuron_activation
+        return responsibilities / np.sum(responsibilities, axis=1, keepdims=True), log_neuron_activation
 
 
     def predict(self, X):
@@ -309,11 +313,11 @@ class SOCEM(SOM):
 
     #############################################################
     #############################################################
-    ###################### RIDGELINE ############################
+    ######################## RIDGELINE ##########################
 
     def delete_vertex_ridgeline(self, X=None):
         # Delete vertex by merging it with one of its 
-        # neighbours based on min ridgeline
+        # neighbours based on max ridgeline
 
         max_ratio = -np.inf
         best_pair = (None, None)
@@ -321,6 +325,10 @@ class SOCEM(SOM):
         vertecies = self.lattice_.graph_.adj_list_
 
         # self.lattice_.graph_.show()
+        
+        # TODO Optimize(caching)!
+        # TODO add ties
+
         
         for vertex1 in vertecies:
             for vertex2 in vertecies[vertex1]:
@@ -462,12 +470,12 @@ class SOCEM(SOM):
         
         for vertex in vertcies_for_deletion:
             self.lattice_.delete_vertex(vertex)
+        
+        self.H_ = np.exp(-0.5 * self.lattice_.pairwise_distance_ / self.sigma_**2)
 
 
     def reconstruct_map(self):
         # Reconstruct map by rewiring to k nearest neighbours using js_divergence
-
-        self.H_ = np.exp(-0.5 * self.lattice_.pairwise_distance_ / self.sigma_**2)
         self.lattice_.reconstruct_map()
 
 
@@ -501,6 +509,7 @@ class SOCEM(SOM):
             print("Neurons->", self.lattice_.neurons_.keys())
 
             new_mdl = self.calculate_mdl(X)
+            print("New MDL:", new_mdl)
 
             if new_mdl < best_mdl:
                 best_vertex = v
@@ -510,9 +519,9 @@ class SOCEM(SOM):
         print('Current MDL->', current_mdl)
         print('Best MDL->', best_mdl)
 
+        self.lattice_ = deepcopy(current_lattice)
         if best_mdl < current_mdl:
             # Accept deletion
-            self.lattice_ = deepcopy(current_lattice)
             self.lattice_.delete_vertex(best_vertex)
 
             print("Deleted -> {}".format(best_vertex))
@@ -526,14 +535,76 @@ class SOCEM(SOM):
         d = X.shape[1]
 
         k = self.lattice_.neurons_nb_
-        weights = np.array(self.lattice_.get_weights())
         log_likelihood = self.calc_log_likelihood(X)
 
-        return 0.5 * d * np.sum(np.log(n * weights / 12)) + 0.5 * k * (np.log(n / 12) + d + 1) - log_likelihood
+        # return 0.5 * d * np.sum(np.log(n * weights / 12)) + 0.5 * k * (np.log(n / 12) + d + 1) - log_likelihood
     
-        # df = k * d * (d + 3) / 2
+        df = k * d * (d + 3) / 2
 
-        # return -log_likelihood + 0.5 * df * np.log(n) + n * np.log(k)
+        return -log_likelihood + 0.5 * df * np.log(n)
+    
+    # #############################################################
+    # #############################################################
+    # ######################  Entropy based   #####################
+
+    def delete_vertex_entropy(self, X=None):
+        # Delete vertex by merging it with one of its 
+        # neighbours based on min entropy
+
+        max_dif= -np.inf
+        best_pair = (None, None)
+        best_pair_idx = (None, None)
+
+        neurons = self.lattice_.neurons_
+        neurons_indexes = list(neurons.keys())
+
+        if len(neurons) == 1:
+            return False
+
+        responsibilities, _ = self.find_responsibilities(X)
+        
+        for v1_idx in range(0, len(neurons)):
+            for v2_idx in range(v1_idx + 1, len(neurons)):
+                diff = self.estimated_entropy_diff(responsibilities, v1_idx, v2_idx)
+                if diff > max_dif:
+                    max_dif = diff
+                    best_pair = (neurons_indexes[v1_idx], neurons_indexes[v2_idx])
+                    best_pair_idx = (v1_idx, v2_idx)
+        
+        print("Best pair ->", best_pair)
+        
+        self.criteria_ = self.calculate_entropy(X, best_pair_idx)
+
+        self.lattice_.collapse_edge(best_pair[0], best_pair[1])
+        print("Merged -> {}, {}".format(best_pair[0], best_pair[1]))
+        self.H_ = np.exp(-0.5 * self.lattice_.pairwise_distance_ / self.sigma_**2)
+
+        return True
+
+
+
+    def estimated_entropy_diff(self, resp, neuron1_idx, neuron2_idx):
+        return -np.sum(resp[:, neuron1_idx] * np.log(resp[:, neuron1_idx]) + resp[:, neuron2_idx] * np.log(resp[:, neuron2_idx])) + \
+            np.sum((resp[:, neuron1_idx] + resp[:, neuron2_idx]) * np.log(resp[:, neuron1_idx] + resp[:, neuron2_idx]))
+
+    
+    def calculate_entropy(self, X, pair=None):
+        self.use_weights_ = True
+
+        responsibilities, _ = self.find_responsibilities(X)
+
+        if pair is None:
+            return -np.sum(responsibilities * np.log(responsibilities))
+        else:
+            return self.calculate_entropy_pair(responsibilities, pair[0], pair[1])
+    
+
+    def calculate_entropy_pair(self, resp, neuron1_idx, neuron2_idx):
+        pair_entropy = (resp[:, neuron1_idx] + resp[:, neuron2_idx]) * np.log(resp[:, neuron1_idx] + resp[:, neuron2_idx])
+
+        return -np.sum(np.sum(resp * np.log(resp), axis=1) - resp[:, neuron1_idx] * np.log(resp[:, neuron1_idx])
+                  - resp[:, neuron2_idx] * np.log(resp[:, neuron2_idx]) + pair_entropy)
+
 
     
     def calc_log_likelihood(self, X):
@@ -542,20 +613,20 @@ class SOCEM(SOM):
         return np.sum(np.log(weights @ activation_vals.T))
 
 
-    def calculate_entropy_ratio(self, vertex, X):
-        d = X.shape[1]
-        mean = self.lattice_.neurons_[vertex].mean_
-        cov = self.lattice_.neurons_[vertex].cov_
+    # def calculate_entropy_ratio(self, vertex, X):
+    #     d = X.shape[1]
+    #     mean = self.lattice_.neurons_[vertex].mean_
+    #     cov = self.lattice_.neurons_[vertex].cov_
 
-        max_entropy = -0.5 * (d * (1 + np.log(2*np.pi)) + np.log(np.linalg.det(cov)))
+    #     max_entropy = -0.5 * (d * (1 + np.log(2*np.pi)) + np.log(np.linalg.det(cov)))
 
-        y_pred = self.predict(X)
-        mask = y_pred == vertex
-        clusters_points = X[mask]
+    #     y_pred = self.predict(X)
+    #     mask = y_pred == vertex
+    #     clusters_points = X[mask]
 
-        entropy = -np.mean(multivariate_normal.logpdf(clusters_points, mean, cov))
+    #     entropy = -np.mean(multivariate_normal.logpdf(clusters_points, mean, cov))
 
-        return entropy / max_entropy
+    #     return entropy / max_entropy
     
 
     # def edge_cutting(self, X):
